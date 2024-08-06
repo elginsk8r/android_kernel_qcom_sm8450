@@ -1634,8 +1634,10 @@ static int battery_psy_get_prop(struct power_supply *psy,
 			power_supply_get_property(bcdev->combo_batt_psy,
 						prop, pval);
 			break;
+		} else {
+			pval->intval = pst->prop[prop_id];
+			break;
 		}
-		break;
 	default:
 		pval->intval = pst->prop[prop_id];
 		break;
