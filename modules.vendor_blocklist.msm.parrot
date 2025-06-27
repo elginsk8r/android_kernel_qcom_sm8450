@@ -67,3 +67,5 @@ blocklist rbs_fod_mmi.ko
 blocklist watchdogtest
 blocklist fpc1020_mmi
 blocklist anc_fps_mmi
+blocklist chipone_tddi_v3_mmi
+blocklist ilitek_v4_mmi
