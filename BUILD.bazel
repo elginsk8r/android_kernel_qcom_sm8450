@@ -217,7 +217,7 @@ define_common_kernels(target_configs = {
 #  configs to reduce the size. Hence, not using mixed build.
 kernel_build(
     name = "kernel_aarch64_microdroid",
-    srcs = ["//common:kernel_aarch64_sources"],
+    srcs = ["//vendor/qcom/kernel:kernel_aarch64_sources"],
     outs = [
         "Image",
         "System.map",
@@ -234,7 +234,7 @@ kernel_build(
 
 kernel_build(
     name = "kernel_aarch64_microdroid_16k",
-    srcs = ["//common:kernel_aarch64_sources"],
+    srcs = ["//vendor/qcom/kernel:kernel_aarch64_sources"],
     outs = [
         "Image",
         "System.map",
@@ -252,7 +252,7 @@ kernel_build(
 
 kernel_build(
     name = "kernel_aarch64_microdroid_minimal",
-    srcs = ["//common:kernel_aarch64_sources"],
+    srcs = ["//vendor/qcom/kernel:kernel_aarch64_sources"],
     outs = [
         "Image",
         "System.map",
@@ -302,7 +302,7 @@ copy_to_dist_dir(
 #  configs to reduce the size. Hence, not using mixed build.
 kernel_build(
     name = "kernel_x86_64_microdroid",
-    srcs = ["//common:kernel_x86_64_sources"],
+    srcs = ["//vendor/qcom/kernel:kernel_x86_64_sources"],
     outs = X86_64_OUTS,
     arch = "x86_64",
     build_config = "build.config.microdroid.x86_64",
@@ -323,7 +323,7 @@ copy_to_dist_dir(
 
 kernel_build(
     name = "kernel_aarch64_crashdump",
-    srcs = ["//common:kernel_aarch64_sources"],
+    srcs = ["//vendor/qcom/kernel:kernel_aarch64_sources"],
     outs = [
         "Image",
     ],
@@ -345,7 +345,7 @@ copy_to_dist_dir(
 
 kernel_build(
     name = "kernel_x86_64_crashdump",
-    srcs = ["//common:kernel_x86_64_sources"],
+    srcs = ["//vendor/qcom/kernel:kernel_x86_64_sources"],
     outs = X86_64_OUTS,
     arch = "x86_64",
     build_config = "build.config.crashdump.x86_64",

@@ -46,7 +46,7 @@ def ddk_headers_build_test(
 
     _ddk_headers_wrapper(
         name = name + "_ddk_headers_wrapped",
-        target = "//common:all_headers",
+        target = "//vendor/qcom/kernel:all_headers",
     )
 
     build_test(
