@@ -166,6 +166,8 @@
   clk_hw_unregister
   __clk_is_enabled
   __clk_mux_determine_rate_closest
+  clk_notifier_register
+  clk_notifier_unregister
   clk_prepare
   clk_put
   clk_restore_context
@@ -317,6 +319,7 @@
   dev_coredumpm
   dev_coredumpv
   dev_driver_string
+  _dev_emerg
   _dev_err
   dev_err_probe
   dev_fetch_sw_netstats
@@ -381,12 +384,14 @@
   devm_extcon_dev_register
   devm_extcon_dev_unregister
   devm_free_irq
+  devm_fwnode_iio_channel_get_by_name
   devm_fwnode_pwm_get
   devm_gpiod_get_optional
   devm_gpio_request
   devm_gpio_request_one
   devm_hwrng_register
   devm_hwspin_lock_register
+  devm_hwspin_lock_request_specific
   devm_iio_channel_get
   devm_iio_device_alloc
   __devm_iio_device_register
@@ -406,6 +411,7 @@
   devm_led_classdev_multicolor_register_ext
   devm_led_classdev_register_ext
   devm_mbox_controller_register
+  devm_memremap
   devm_nvmem_cell_get
   devm_nvmem_device_get
   devm_nvmem_register
@@ -448,6 +454,7 @@
   devm_tegra_memory_controller_get
   devm_thermal_of_cooling_device_register
   devm_thermal_of_zone_register
+  devm_thermal_of_zone_unregister
   devm_usb_get_phy_by_node
   _dev_notice
   dev_pm_clear_wake_irq
@@ -1133,6 +1140,8 @@
   kvfree_sensitive
   kvmalloc_node
   kvmemdup
+  led_classdev_register_ext
+  led_classdev_unregister
   led_mc_calc_color_components
   __list_add_valid_or_report
   __list_del_entry_valid_or_report
@@ -1575,6 +1584,7 @@
   __put_task_struct
   put_unused_fd
   put_user_ifreq
+  pwm_apply_state
   pwmchip_add
   pwmchip_remove
   qcom_icc_xlate_extended
@@ -1968,6 +1978,7 @@
   stop_machine
   stop_one_cpu
   stop_one_cpu_nowait
+  strchrnul
   strcmp
   strcpy
   strcspn
@@ -2008,7 +2019,9 @@
   sysfs_add_link_to_group
   sysfs_create_bin_file
   sysfs_create_file_ns
+  sysfs_create_files
   sysfs_create_group
+  sysfs_create_groups
   sysfs_create_link
   sysfs_emit
   sysfs_emit_at
@@ -2016,7 +2029,9 @@
   sysfs_remove_bin_file
   sysfs_remove_file_from_group
   sysfs_remove_file_ns
+  sysfs_remove_files
   sysfs_remove_group
+  sysfs_remove_groups
   sysfs_remove_link
   sysfs_remove_link_from_group
   sysfs_streq
@@ -2144,6 +2159,7 @@
   __traceiter_android_vh_cpuidle_psci_exit
   __traceiter_android_vh_disable_thermal_cooling_stats
   __traceiter_android_vh_do_wake_up_sync
+  __traceiter_android_vh_f2fs_ioc_set_pin_file
   __traceiter_android_vh_ftrace_dump_buffer
   __traceiter_android_vh_ftrace_format_check
   __traceiter_android_vh_ftrace_oops_enter
@@ -2171,7 +2187,6 @@
   __traceiter_android_vh_ufs_send_uic_command
   __traceiter_android_vh_ufs_update_sdev
   __traceiter_android_vh_update_topology_flags_workfn
-  __traceiter_android_vh_f2fs_ioc_set_pin_file
   __traceiter_android_vh_zs_shrinker_adjust
   __traceiter_android_vh_zs_shrinker_bypass
   __traceiter_cpu_frequency_limits
@@ -2258,6 +2273,7 @@
   __tracepoint_android_vh_cpuidle_psci_exit
   __tracepoint_android_vh_disable_thermal_cooling_stats
   __tracepoint_android_vh_do_wake_up_sync
+  __tracepoint_android_vh_f2fs_ioc_set_pin_file
   __tracepoint_android_vh_ftrace_dump_buffer
   __tracepoint_android_vh_ftrace_format_check
   __tracepoint_android_vh_ftrace_oops_enter
@@ -2285,7 +2301,6 @@
   __tracepoint_android_vh_ufs_send_uic_command
   __tracepoint_android_vh_ufs_update_sdev
   __tracepoint_android_vh_update_topology_flags_workfn
-  __tracepoint_android_vh_f2fs_ioc_set_pin_file
   __tracepoint_android_vh_zs_shrinker_adjust
   __tracepoint_android_vh_zs_shrinker_bypass
   __tracepoint_cpu_frequency_limits
@@ -2399,9 +2414,14 @@
   usb_add_phy_dev
   usb_alloc_coherent
   usb_alloc_dev
+  usb_alloc_urb
   usb_assign_descriptors
   usb_composite_setup_continue
+  usb_control_msg
+  usb_control_msg_recv
+  usb_control_msg_send
   usb_decode_ctrl
+  usb_deregister
   usb_device_match_id
   usb_ep_alloc_request
   usb_ep_autoconfig
@@ -2411,8 +2431,10 @@
   usb_ep_free_request
   usb_ep_queue
   usb_ep_set_halt
+  usb_find_common_endpoints
   usb_free_all_descriptors
   usb_free_coherent
+  usb_free_urb
   usb_function_register
   usb_function_unregister
   usb_gadget_connect
@@ -2422,7 +2444,10 @@
   usb_ifnum_to_if
   usb_interface_id
   usb_phy_set_charger_current
+  usb_poison_urb
+  usb_put_dev
   usb_put_function_instance
+  usb_register_driver
   usb_register_notify
   usb_remove_phy
   usb_role_switch_find_by_fwnode
@@ -2433,6 +2458,7 @@
   usb_set_device_state
   usb_speed_string
   usb_string_id
+  usb_submit_urb
   usb_unregister_notify
   __usecs_to_jiffies
   usleep_range_state
