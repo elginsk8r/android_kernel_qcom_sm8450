@@ -36,7 +36,9 @@ def _define_build_config(
         target,
         variant,
         boot_image_opts = boot_image_opts(),
-        build_config_fragments = []):
+        build_config_fragments = [],
+        vendor_brand = None,
+        vendor_product = None):
     """Creates a kernel_build_config for an MSM target
 
     Creates a `kernel_build_config` for input to a `kernel_build` rule.
@@ -45,7 +47,8 @@ def _define_build_config(
       msm_target: name of target platform (e.g. "kalama")
       variant: variant of kernel to build (e.g. "gki")
     """
-
+    vendor_brand_line = 'VENDOR_BRAND="{}"\n'.format(vendor_brand) if vendor_brand else ""
+    vendor_product_line = 'VENDOR_PRODUCT="{}"\n'.format(vendor_product) if vendor_product else ""
     gen_config_command = """
       cat << 'EOF' > "$@"
 KERNEL_DIR="vendor/qcom/kernel"
@@ -70,6 +73,8 @@ fi
 
 KERNEL_VENDOR_CMDLINE+=' %s '
 VENDOR_BOOTCONFIG+='androidboot.first_stage_console=1 androidboot.hardware=qcom_kp'
+%s
+%s
 EOF
     """ % (
         " ".join(la_variants),
@@ -82,6 +87,8 @@ EOF
         int(boot_image_opts.lz4_ramdisk),
         boot_image_opts.earlycon_addr,
         " ".join(boot_image_opts.kernel_vendor_cmdline_extras),
+        vendor_brand_line,
+        vendor_product_line,
     )
 
     # Generate the build config
@@ -438,7 +445,9 @@ def define_msm_la(
         variant,
         in_tree_module_list,
         kmi_enforced = True,
-        boot_image_opts = boot_image_opts()):
+        boot_image_opts = boot_image_opts(),
+        vendor_brand = None,
+        vendor_product = None):
     """Top-level kernel build definition macro for an MSM platform
 
     Args:
@@ -458,7 +467,8 @@ def define_msm_la(
 
     # Enforce format of "//msm-kernel:target-foo_variant-bar" (underscore is the delimeter
     # between target and variant)
-    target = msm_target.replace("_", "-") + "_" + variant.replace("_", "-")
+    vendor_target = vendor_product if vendor_product else msm_target
+    target = vendor_target.replace("_", "-") + "_" + variant.replace("_", "-")
 
     if variant == "consolidate":
         base_kernel = "//vendor/qcom/kernel:kernel_aarch64_consolidate"
@@ -490,6 +500,8 @@ def define_msm_la(
         variant,
         boot_image_opts = boot_image_opts,
         build_config_fragments = build_config_fragments,
+        vendor_brand = vendor_brand,
+        vendor_product = vendor_product,
     )
 
     _define_kernel_build(

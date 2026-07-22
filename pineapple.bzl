@@ -4,7 +4,7 @@ load(":image_opts.bzl", "boot_image_opts")
 
 target_name = "pineapple"
 
-def define_pineapple():
+def define_pineapple(vendor_brand = None, vendor_product = None):
     _pineapple_in_tree_modules = [
         # keep sorted
         "arch/arm64/gunyah/gh_arm_drv.ko",
@@ -215,4 +215,6 @@ def define_pineapple():
                 board_kernel_cmdline_extras = board_kernel_cmdline_extras,
                 board_bootconfig_extras = board_bootconfig_extras,
             ),
+            vendor_brand = vendor_brand,
+            vendor_product = vendor_product,
         )

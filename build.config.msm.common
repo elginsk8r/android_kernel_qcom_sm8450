@@ -148,6 +148,15 @@ function apply_defconfig_fragment() {
   DEFCONFIG="${2:-${DEFCONFIG}}"
 }
 
+function apply_defconfig_fragments() {
+  FRAGMENT_CONFIG=$2
+  if [ -z "${DEFCONFIG_FRAGMENTS}" ]; then
+    DEFCONFIG_FRAGMENTS="${KERNEL_DIR}/arch/${ARCH}/configs/${DEFCONFIG}"
+  fi
+  DEFCONFIG_FRAGMENTS="${DEFCONFIG_FRAGMENTS} ${FRAGMENT_CONFIG}"
+  DEFCONFIG="${1:-${DEFCONFIG}}"
+}
+
 ################################################################################
 ## DLKMs
 if [ -e "${KERNEL_DIR}/modules.list.${CONFIG_TARGET}" ]; then

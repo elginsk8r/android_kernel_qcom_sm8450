@@ -4,7 +4,7 @@ load(":target_variants.bzl", "la_variants")
 
 target_name = "monaco"
 
-def define_monaco():
+def define_monaco(vendor_brand = None, vendor_product = None):
     _monaco_in_tree_modules = [
         # keep sorted
         "drivers/char/rdbg.ko",
@@ -232,4 +232,6 @@ def define_monaco():
                 board_kernel_cmdline_extras = board_kernel_cmdline_extras,
                 board_bootconfig_extras = board_bootconfig_extras,
             ),
+            vendor_brand = vendor_brand,
+            vendor_product = vendor_product,
         )

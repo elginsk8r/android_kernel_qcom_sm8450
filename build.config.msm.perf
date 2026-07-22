@@ -46,7 +46,23 @@ append_cmd POST_DEFCONFIG_CMDS 'sanity_check_abi'
 
 function build_defconfig_fragments() {
 	if [[ "${VARIANT}" =~ ^(perf|consolidate)$ ]]; then
-		apply_defconfig_fragment ${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${MSM_ARCH}_perf.config vendor/${MSM_ARCH}-perf_defconfig
+		vendor_fragments+=("${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${MSM_ARCH}_perf.config")
+		if [ -f "${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${VENDOR_BRAND}-${MSM_ARCH}.config" ]; then
+			vendor_fragments+=("${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${VENDOR_BRAND}-${MSM_ARCH}.config")
+		fi
+		if [ -f "${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${VENDOR_BRAND}-${MSM_ARCH}-perf.config" ]; then
+			vendor_fragments+=("${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${VENDOR_BRAND}-${MSM_ARCH}-perf.config")
+		fi
+		if [ -f "${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${VENDOR_BRAND}-${MSM_ARCH}-${VENDOR_PRODUCT}.config" ]; then
+			vendor_fragments+=("${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${VENDOR_BRAND}-${MSM_ARCH}-${VENDOR_PRODUCT}.config")
+		elif [ -f "${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${VENDOR_BRAND}-${VENDOR_PRODUCT}.config" ]; then
+			vendor_fragments+=("${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${VENDOR_BRAND}-${VENDOR_PRODUCT}.config")
+		elif [ -f "${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${MSM_ARCH}-${VENDOR_PRODUCT}.config" ]; then
+			vendor_fragments+=("${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${MSM_ARCH}-${VENDOR_PRODUCT}.config")
+		elif [ -f "${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${VENDOR_PRODUCT}.config" ]; then
+			vendor_fragments+=("${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${VENDOR_PRODUCT}.config")
+		fi
+		apply_defconfig_fragments "vendor/${MSM_ARCH}-perf_defconfig" "${vendor_fragments[@]}"
 		if [ "${VARIANT}" = perf ]; then
 			return
 		fi
