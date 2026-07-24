@@ -4,7 +4,7 @@ load(":target_variants.bzl", "la_variants")
 
 target_name = "parrot"
 
-def define_parrot():
+def define_parrot(additional_defconfig_fragments = []):
     _parrot_in_tree_modules = [
         # keep sorted
         "arch/arm64/gunyah/gh_arm_drv.ko",
@@ -301,4 +301,5 @@ def define_parrot():
                 board_kernel_cmdline_extras = board_kernel_cmdline_extras,
                 board_bootconfig_extras = board_bootconfig_extras,
             ),
+            additional_defconfig_fragments = additional_defconfig_fragments,
         )

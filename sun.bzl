@@ -5,7 +5,7 @@ load(":target_variants.bzl", "la_variants")
 
 target_name = "sun"
 
-def define_sun():
+def define_sun(additional_defconfig_fragments = []):
     _sun_in_tree_modules = [
         # keep sorted
         "arch/arm64/gunyah/gh_arm_drv.ko",
@@ -361,6 +361,7 @@ def define_sun():
                 board_kernel_cmdline_extras = board_kernel_cmdline_extras,
                 board_bootconfig_extras = board_bootconfig_extras,
             ),
+            additional_defconfig_fragments = additional_defconfig_fragments,
         )
 
         define_msm_16k_la(
@@ -372,4 +373,5 @@ def define_sun():
                 board_kernel_cmdline_extras = board_kernel_cmdline_extras,
                 board_bootconfig_extras = board_bootconfig_extras,
             ),
+            additional_defconfig_fragments = additional_defconfig_fragments,
         )

@@ -137,7 +137,8 @@ def _define_kernel_build(
         dtbo_list,
         dtstree,
         define_abi_targets,
-        kmi_enforced):
+        kmi_enforced,
+        additional_defconfig_fragments = []):
     """Creates a `kernel_build` and other associated definitions
 
     This is where the main kernel build target is created (e.g. `//msm-kernel:kalama_gki`).
@@ -170,6 +171,7 @@ def _define_kernel_build(
         additional_kmi_symbol_lists = ["{}_all_kmi_symbol_lists".format(base_kernel)] if define_abi_targets else None,
         collect_unstripped_modules = define_abi_targets,
         visibility = ["//visibility:public"],
+        defconfig_fragments = additional_defconfig_fragments,
     )
 
     if define_abi_targets:
@@ -431,7 +433,8 @@ def define_msm_16k_la(
         variant,
         in_tree_module_list,
         kmi_enforced = True,
-        boot_image_opts = boot_image_opts()):
+        boot_image_opts = boot_image_opts(),
+        additional_defconfig_fragments = []):
     """Top-level kernel build definition macro for an MSM platform
 
     Args:
@@ -482,6 +485,7 @@ def define_msm_16k_la(
         dtstree,
         define_abi_targets,
         kmi_enforced,
+        additional_defconfig_fragments = additional_defconfig_fragments,
     )
 
     _define_image_build(

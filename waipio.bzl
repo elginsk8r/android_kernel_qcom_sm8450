@@ -4,7 +4,7 @@ load(":target_variants.bzl", "la_variants")
 
 target_name = "waipio"
 
-def define_waipio():
+def define_waipio(additional_defconfig_fragments = []):
     _waipio_in_tree_modules = [
         # keep sorted
         "arch/arm64/gunyah/gh_arm_drv.ko",
@@ -269,4 +269,5 @@ def define_waipio():
             board_kernel_cmdline_extras = board_kernel_cmdline_extras,
             board_bootconfig_extras = board_bootconfig_extras,
         ),
+        additional_defconfig_fragments = additional_defconfig_fragments,
     )
