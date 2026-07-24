@@ -436,6 +436,7 @@ def _define_uapi_library(target):
     )
 
 def define_msm_la(
+        target_name,
         msm_target,
         variant,
         in_tree_module_list,
@@ -461,7 +462,7 @@ def define_msm_la(
 
     # Enforce format of "//msm-kernel:target-foo_variant-bar" (underscore is the delimeter
     # between target and variant)
-    target = msm_target.replace("_", "-") + "_" + variant.replace("_", "-")
+    target = target_name.replace("_", "-") + "_" + variant.replace("_", "-")
 
     if variant == "consolidate":
         base_kernel = "//vendor/qcom/kernel:kernel_aarch64_consolidate"
@@ -495,9 +496,10 @@ def define_msm_la(
         build_config_fragments = build_config_fragments,
     )
 
+    kernel_target = msm_target + "_" + variant
     _define_kernel_build(
         target,
-        msm_target,
+        kernel_target,
         base_kernel,
         in_tree_module_list,
         dtb_list,

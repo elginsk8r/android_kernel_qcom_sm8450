@@ -4,7 +4,9 @@ load(":image_opts.bzl", "boot_image_opts")
 
 target_name = "pineapple"
 
-def define_pineapple(additional_defconfig_fragments = []):
+def define_pineapple(
+        additional_defconfig_fragments = [],
+        vendor_target = None):
     _pineapple_in_tree_modules = [
         # keep sorted
         "arch/arm64/gunyah/gh_arm_drv.ko",
@@ -206,6 +208,7 @@ def define_pineapple(additional_defconfig_fragments = []):
             board_bootconfig_extras += ["androidboot.serialconsole=0"]
 
         define_msm_la(
+            target_name = vendor_target if vendor_target else target_name,
             msm_target = target_name,
             variant = variant,
             in_tree_module_list = mod_list,

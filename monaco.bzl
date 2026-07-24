@@ -4,7 +4,9 @@ load(":target_variants.bzl", "la_variants")
 
 target_name = "monaco"
 
-def define_monaco(additional_defconfig_fragments = []):
+def define_monaco(
+        additional_defconfig_fragments = [],
+        vendor_target = None):
     _monaco_in_tree_modules = [
         # keep sorted
         "drivers/char/rdbg.ko",
@@ -223,6 +225,7 @@ def define_monaco(additional_defconfig_fragments = []):
             board_bootconfig_extras += ["androidboot.serialconsole=0"]
 
         define_msm_la(
+            target_name = vendor_target if vendor_target else target_name,
             msm_target = target_name,
             variant = variant,
             in_tree_module_list = mod_list,
