@@ -122,6 +122,7 @@ enum usb_property_id {
 	USB_SCOPE,
 	USB_CONNECTOR_TYPE,
 	F_ACTIVE,
+	D_ACTIVE,
 	USB_PROP_MAX,
 };
 
@@ -241,6 +242,7 @@ struct psy_state {
 struct battery_chg_match_data {
 	const struct power_supply_desc	*batt_psy_desc;
 	const struct power_supply_desc	*wls_psy_desc;
+	bool				notify_display_active;
 };
 
 struct battery_chg_dev {
@@ -641,6 +643,10 @@ int qti_battery_charger_set_prop(const char *name,
 	case FLASH_ACTIVE:
 		pst = &bcdev->psy_list[PSY_TYPE_USB];
 		rc = write_property_id(bcdev, pst, F_ACTIVE, val);
+		break;
+	case DISPLAY_ACTIVE:
+		pst = &bcdev->psy_list[PSY_TYPE_USB];
+		rc = write_property_id(bcdev, pst, D_ACTIVE, val);
 		break;
 	default:
 		break;
@@ -1554,6 +1560,12 @@ static const struct battery_chg_match_data battery_chg_match_data_default = {
 static const struct battery_chg_match_data battery_chg_match_data_waipio = {
 	.batt_psy_desc		= &batt_psy_desc_waipio,
 	.wls_psy_desc		= &wls_psy_desc_waipio,
+};
+
+static const struct battery_chg_match_data battery_chg_match_data_ingot = {
+	.batt_psy_desc		= &batt_psy_desc_waipio,
+	.wls_psy_desc		= &wls_psy_desc_waipio,
+	.notify_display_active	= true,
 };
 
 static int battery_chg_init_psy(struct battery_chg_dev *bcdev)
@@ -2483,6 +2495,7 @@ static void panel_event_notifier_callback(enum panel_event_notifier_tag tag,
 			struct panel_event_notification *notification, void *data)
 {
 	struct battery_chg_dev *bcdev = data;
+	int val, rc;
 
 	if (!notification) {
 		pr_debug("Invalid panel notification\n");
@@ -2491,15 +2504,26 @@ static void panel_event_notifier_callback(enum panel_event_notifier_tag tag,
 
 	pr_debug("panel event received, type: %d\n", notification->notif_type);
 	switch (notification->notif_type) {
+	case DRM_PANEL_EVENT_BLANK_LP:
+		val = 0;
+		break;
 	case DRM_PANEL_EVENT_BLANK:
 		battery_chg_notify_disable(bcdev);
+		val = 0;
 		break;
 	case DRM_PANEL_EVENT_UNBLANK:
 		battery_chg_notify_enable(bcdev);
+		val = 1;
 		break;
 	default:
 		pr_debug("Ignore panel event: %d\n", notification->notif_type);
-		break;
+		return;
+	}
+
+	if (bcdev->match_data->notify_display_active) {
+		rc = qti_battery_charger_set_prop("usb", DISPLAY_ACTIVE, val);
+		if (rc)
+			pr_debug("Failed to set display active prop, rc=%d\n", rc);
 	}
 }
 
@@ -2769,6 +2793,10 @@ static const struct of_device_id battery_chg_match_table[] = {
 	{
 		.compatible = "qcom,waipio-battery-charger",
 		.data = &battery_chg_match_data_waipio,
+	},
+	{
+		.compatible = "osom,ingot-battery-charger",
+		.data = &battery_chg_match_data_ingot,
 	},
 	{},
 };
