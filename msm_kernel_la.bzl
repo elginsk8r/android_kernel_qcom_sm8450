@@ -4,6 +4,7 @@ load(
     "define_extras",
     "get_build_config_fragments",
     "get_dtb_list",
+    "get_dtb_products",
     "get_dtbo_list",
     "get_dtstree",
     "get_vendor_ramdisk_binaries",
@@ -26,6 +27,7 @@ load(
 load(":avb_boot_img.bzl", "avb_sign_boot_image")
 load(":image_opts.bzl", "boot_image_opts")
 load(":modules_unprotected.bzl", "get_unprotected_vendor_modules_list")
+load(":moto_products.bzl", "define_moto_vendor_blocklist", "get_moto_build_configs", "moto_product_dict")
 load(":msm_abl.bzl", "define_abl_dist")
 load(":msm_common.bzl", "define_top_level_config", "gen_config_without_source_lines", "get_out_dir")
 load(":msm_dtc.bzl", "define_dtc_dist")
@@ -108,8 +110,7 @@ EOF
         ] + [fragment for fragment in build_config_fragments] + [
             "build.config.msm.common",
             "build.config.msm.perf",
-            "build.config.moto",
-        ],
+        ] + get_moto_build_configs(msm_target, target, variant),
     )
 
     board_cmdline_extras = " ".join(boot_image_opts.board_kernel_cmdline_extras)
@@ -141,7 +142,8 @@ def _define_kernel_build(
         dtbo_list,
         dtstree,
         define_abi_targets,
-        kmi_enforced):
+        kmi_enforced,
+        dt_by_product = {}):
     """Creates a `kernel_build` and other associated definitions
 
     This is where the main kernel build target is created (e.g. `//msm-kernel:kalama_gki`).
@@ -155,12 +157,18 @@ def _define_kernel_build(
       dtbo_list: device tree overlay blobs expected to be built
       define_abi_targets: boolean determining if ABI targets should be defined
       kmi_enforced: boolean determining if the KMI contract should be enforced
+      dt_by_product: dict of Motorola product -> device trees built for it
     """
-    out_list = [".config", "Module.symvers"]
-    if dtb_list:
-        out_list += dtb_list
-    if dtbo_list:
-        out_list += dtbo_list
+    base_out_list = [".config", "Module.symvers"]
+    out_list = base_out_list + (dtb_list or []) + (dtbo_list or [])
+
+    # The device trees that get built depend on the product, see platform_map.bzl
+    product_outs = moto_product_dict(msm_target, out_list, {
+        product: base_out_list + dts
+        for product, dts in dt_by_product.items()
+    })
+    if product_outs:
+        out_list = product_outs
 
     kernel_build(
         name = target,
@@ -218,7 +226,8 @@ def _define_image_build(
         boot_image_outs = None,
         dtbo_list = [],
         vendor_ramdisk_binaries = None,
-        in_tree_module_list = []):
+        in_tree_module_list = [],
+        dtbo_by_product = {}):
     """Creates a `kernel_images` target which will generate bootable device images
 
     Args:
@@ -235,7 +244,18 @@ def _define_image_build(
       boot_image_outs: boot image outputs,
       dtbo_list: list of device tree overlay blobs to be built into `dtbo.img`
       vendor_ramdisk_binaries: ramdisk binaries (cpio archives)
+      dtbo_by_product: dict of Motorola product -> dtbo_list
     """
+
+    dtbo_srcs = [":{}/".format(target) + d for d in dtbo_list] if dtbo_list else None
+    dtbo_srcs_by_product = moto_product_dict(msm_target, dtbo_srcs or [], {
+        product: [":{}/".format(target) + d for d in dtbos]
+        for product, dtbos in dtbo_by_product.items()
+    })
+    if dtbo_srcs_by_product:
+        dtbo_srcs = select(dtbo_srcs_by_product)
+
+    vendor_dlkm_modules_blocklist = define_moto_vendor_blocklist(msm_target, target)
 
     # Generate the vendor_dlkm list
     native.genrule(
@@ -266,16 +286,14 @@ def _define_image_build(
         system_dlkm_modules_list = "android/gki_system_dlkm_modules",
         vendor_dlkm_modules_list = ":{}_vendor_dlkm_modules_list_generated".format(target),
         system_dlkm_modules_blocklist = "modules.systemdlkm_blocklist.msm.{}".format(msm_target),
-        #vendor_dlkm_modules_blocklist = "modules.vendor_blocklist.msm.{}".format(msm_target),
-        vendor_dlkm_modules_blocklist = "modules.vendor_blocklist.msm.moto",
-        dtbo_srcs = [":{}/".format(target) + d for d in dtbo_list] if dtbo_list else None,
+        vendor_dlkm_modules_blocklist = vendor_dlkm_modules_blocklist,
+        dtbo_srcs = dtbo_srcs,
         vendor_ramdisk_binaries = vendor_ramdisk_binaries,
         boot_image_outs = boot_image_outs,
         system_dlkm_fs_types = ["ext4"],
         deps = [
             "modules.list.msm.{}".format(msm_target),
-            #"modules.vendor_blocklist.msm.{}".format(msm_target),
-            "modules.vendor_blocklist.msm.moto",
+            vendor_dlkm_modules_blocklist,
             "modules.systemdlkm_blocklist.msm.{}".format(msm_target),
             "android/gki_system_dlkm_modules",
         ],
@@ -473,6 +491,10 @@ def define_msm_la(
 
     dtb_list = get_dtb_list(msm_target)
     dtbo_list = get_dtbo_list(msm_target)
+    dtb_by_product = {p: get_dtb_list(msm_target, product = p) for p in get_dtb_products(msm_target)}
+    dtbo_by_product = {p: get_dtbo_list(msm_target, product = p) for p in get_dtb_products(msm_target)}
+    has_dtb = bool(dtb_list) or any(dtb_by_product.values())
+    has_dtbo = bool(dtbo_list) or any(dtbo_by_product.values())
     dtstree = get_dtstree(msm_target)
     vendor_ramdisk_binaries = get_vendor_ramdisk_binaries(target)
     build_config_fragments = get_build_config_fragments(msm_target)
@@ -506,6 +528,7 @@ def define_msm_la(
         dtstree,
         define_abi_targets,
         kmi_enforced,
+        dt_by_product = {p: dtb_by_product[p] + dtbo_by_product[p] for p in dtb_by_product},
     )
 
     _define_image_build(
@@ -515,13 +538,14 @@ def define_msm_la(
         # When building a GKI target, we take the kernel and boot.img directly from
         # common, so no need to build here.
         build_boot = False if define_abi_targets else True,
-        build_dtbo = True if dtbo_list else False,
+        build_dtbo = has_dtbo,
         build_initramfs = True,
-        build_vendor_boot = True if dtbo_list else False,
+        build_vendor_boot = has_dtbo,
         dtbo_list = dtbo_list,
+        dtbo_by_product = dtbo_by_product,
         vendor_ramdisk_binaries = vendor_ramdisk_binaries,
         boot_image_opts = boot_image_opts,
-        boot_image_outs = None if dtb_list else ["boot.img", "init_boot.img"],
+        boot_image_outs = None if has_dtb else ["boot.img", "init_boot.img"],
         in_tree_module_list = in_tree_module_list,
     )
 
