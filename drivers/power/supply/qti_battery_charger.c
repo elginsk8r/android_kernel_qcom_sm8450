@@ -12,6 +12,7 @@
 #include <linux/firmware.h>
 #include <linux/module.h>
 #include <linux/of.h>
+#include <linux/of_device.h>
 #include <linux/platform_device.h>
 #include <linux/reboot.h>
 #include <linux/rpmsg.h>
@@ -264,6 +265,11 @@ struct psy_state {
 	u32			opcode_set;
 };
 
+struct battery_chg_match_data {
+	const struct power_supply_desc	*batt_psy_desc;
+	const struct power_supply_desc	*wls_psy_desc;
+};
+
 struct battery_chg_dev {
 	struct device			*dev;
 	struct class			battery_class;
@@ -318,6 +324,7 @@ struct battery_chg_dev {
 	bool				initialized;
 	bool				notify_en;
 	bool				error_prop;
+	const struct battery_chg_match_data	*match_data;
 	struct power_supply		*combo_batt_psy;
 };
 
@@ -1127,6 +1134,24 @@ static const struct power_supply_desc wls_psy_desc = {
 	.property_is_writeable	= wls_psy_prop_is_writeable,
 };
 
+static enum power_supply_property wls_props_waipio[] = {
+	POWER_SUPPLY_PROP_ONLINE,
+	POWER_SUPPLY_PROP_VOLTAGE_NOW,
+	POWER_SUPPLY_PROP_VOLTAGE_MAX,
+	POWER_SUPPLY_PROP_CURRENT_NOW,
+	POWER_SUPPLY_PROP_CURRENT_MAX,
+};
+
+static const struct power_supply_desc wls_psy_desc_waipio = {
+	.name			= "wireless",
+	.type			= POWER_SUPPLY_TYPE_WIRELESS,
+	.properties		= wls_props_waipio,
+	.num_properties		= ARRAY_SIZE(wls_props_waipio),
+	.get_property		= wls_psy_get_prop,
+	.set_property		= wls_psy_set_prop,
+	.property_is_writeable	= wls_psy_prop_is_writeable,
+};
+
 static const char *get_wls_type_name(u32 wls_type)
 {
 	if (wls_type >= ARRAY_SIZE(qc_power_supply_wls_type_text))
@@ -1704,6 +1729,52 @@ static const struct power_supply_desc batt_psy_desc = {
 	.property_is_writeable	= battery_psy_prop_is_writeable,
 };
 
+static enum power_supply_property battery_props_waipio[] = {
+	POWER_SUPPLY_PROP_STATUS,
+	POWER_SUPPLY_PROP_HEALTH,
+	POWER_SUPPLY_PROP_PRESENT,
+	POWER_SUPPLY_PROP_CHARGE_TYPE,
+	POWER_SUPPLY_PROP_CAPACITY,
+	POWER_SUPPLY_PROP_VOLTAGE_OCV,
+	POWER_SUPPLY_PROP_VOLTAGE_NOW,
+	POWER_SUPPLY_PROP_VOLTAGE_MAX,
+	POWER_SUPPLY_PROP_CURRENT_NOW,
+	POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT,
+	POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT_MAX,
+	POWER_SUPPLY_PROP_TEMP,
+	POWER_SUPPLY_PROP_TECHNOLOGY,
+	POWER_SUPPLY_PROP_CHARGE_COUNTER,
+	POWER_SUPPLY_PROP_CYCLE_COUNT,
+	POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN,
+	POWER_SUPPLY_PROP_CHARGE_FULL,
+	POWER_SUPPLY_PROP_MODEL_NAME,
+	POWER_SUPPLY_PROP_TIME_TO_FULL_AVG,
+	POWER_SUPPLY_PROP_TIME_TO_FULL_NOW,
+	POWER_SUPPLY_PROP_TIME_TO_EMPTY_AVG,
+	POWER_SUPPLY_PROP_POWER_NOW,
+	POWER_SUPPLY_PROP_POWER_AVG,
+};
+
+static const struct power_supply_desc batt_psy_desc_waipio = {
+	.name			= "battery",
+	.type			= POWER_SUPPLY_TYPE_BATTERY,
+	.properties		= battery_props_waipio,
+	.num_properties		= ARRAY_SIZE(battery_props_waipio),
+	.get_property		= battery_psy_get_prop,
+	.set_property		= battery_psy_set_prop,
+	.property_is_writeable	= battery_psy_prop_is_writeable,
+};
+
+static const struct battery_chg_match_data battery_chg_match_data_default = {
+	.batt_psy_desc		= &batt_psy_desc,
+	.wls_psy_desc		= &wls_psy_desc,
+};
+
+static const struct battery_chg_match_data battery_chg_match_data_waipio = {
+	.batt_psy_desc		= &batt_psy_desc_waipio,
+	.wls_psy_desc		= &wls_psy_desc_waipio,
+};
+
 static int battery_chg_init_psy(struct battery_chg_dev *bcdev)
 {
 	struct power_supply_config psy_cfg = {};
@@ -1721,7 +1792,9 @@ static int battery_chg_init_psy(struct battery_chg_dev *bcdev)
 	}
 
 	bcdev->psy_list[PSY_TYPE_WLS].psy =
-		devm_power_supply_register(bcdev->dev, &wls_psy_desc, &psy_cfg);
+		devm_power_supply_register(bcdev->dev,
+						bcdev->match_data->wls_psy_desc,
+						&psy_cfg);
 	if (IS_ERR(bcdev->psy_list[PSY_TYPE_WLS].psy)) {
 		rc = PTR_ERR(bcdev->psy_list[PSY_TYPE_WLS].psy);
 		bcdev->psy_list[PSY_TYPE_WLS].psy = NULL;
@@ -1730,7 +1803,8 @@ static int battery_chg_init_psy(struct battery_chg_dev *bcdev)
 	}
 
 	bcdev->psy_list[PSY_TYPE_BATTERY].psy =
-		devm_power_supply_register(bcdev->dev, &batt_psy_desc,
+		devm_power_supply_register(bcdev->dev,
+						bcdev->match_data->batt_psy_desc,
 						&psy_cfg);
 	if (IS_ERR(bcdev->psy_list[PSY_TYPE_BATTERY].psy)) {
 		rc = PTR_ERR(bcdev->psy_list[PSY_TYPE_BATTERY].psy);
@@ -2575,6 +2649,56 @@ static ssize_t battery_parallel_cell_count_show(const struct class *c,
 }
 static CLASS_ATTR_RO(battery_parallel_cell_count);
 
+static ssize_t charging_enabled_store(const struct class *c,
+                                      const struct class_attribute *attr,
+                                      const char *buf, size_t count)
+{
+	struct battery_chg_dev *bcdev = container_of(c, struct battery_chg_dev,
+						battery_class);
+	int rc;
+	bool val;
+
+	if (kstrtobool(buf, &val))
+		return -EINVAL;
+
+	if (val) {
+		/*
+		 * Enable charging, i.e. set the restricted current back to
+		 * the thermal limit and unset the restriction boolean flag.
+		 */
+		rc = __battery_psy_set_charge_current(bcdev,
+				bcdev->thermal_fcc_ua);
+		if (rc < 0)
+			return rc;
+		bcdev->restrict_fcc_ua = bcdev->thermal_fcc_ua;
+		bcdev->restrict_chg_en = 0;
+	} else {
+		/*
+		 * Disable charging, i.e. set the restricted current to zero
+		 * and set the restriction boolean flag.
+		 */
+		rc = __battery_psy_set_charge_current(bcdev, 0 /* 0 uA */);
+		if (rc < 0)
+			return rc;
+		bcdev->restrict_fcc_ua = 0;
+		bcdev->restrict_chg_en = 1;
+	}
+
+	return count;
+}
+
+static ssize_t charging_enabled_show(const struct class *c,
+                                     const struct class_attribute *attr,
+                                     char *buf)
+{
+	struct battery_chg_dev *bcdev = container_of(c, struct battery_chg_dev,
+						battery_class);
+	bool val = !bcdev->restrict_chg_en && bcdev->restrict_fcc_ua;
+
+	return scnprintf(buf, PAGE_SIZE, "%d\n", val);
+}
+static CLASS_ATTR_RW(charging_enabled);
+
 static struct attribute *battery_class_attrs[] = {
 	&class_attr_soh.attr,
 	&class_attr_resistance.attr,
@@ -2596,6 +2720,7 @@ static struct attribute *battery_class_attrs[] = {
 	&class_attr_usb_typec_compliant.attr,
 	&class_attr_charge_control_en.attr,
 	&class_attr_battery_parallel_cell_count.attr,
+	&class_attr_charging_enabled.attr,
 	NULL,
 };
 ATTRIBUTE_GROUPS(battery_class);
@@ -2892,6 +3017,10 @@ static int battery_chg_probe(struct platform_device *pdev)
 	if (!bcdev)
 		return -ENOMEM;
 
+	bcdev->match_data = of_device_get_match_data(dev);
+	if (!bcdev->match_data)
+		bcdev->match_data = &battery_chg_match_data_default;
+
 	bcdev->psy_list[PSY_TYPE_BATTERY].map = battery_prop_map;
 	bcdev->psy_list[PSY_TYPE_BATTERY].prop_count = BATT_PROP_MAX;
 	bcdev->psy_list[PSY_TYPE_BATTERY].opcode_get = BC_BATTERY_STATUS_GET;
@@ -3048,7 +3177,14 @@ static int battery_chg_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id battery_chg_match_table[] = {
-	{ .compatible = "qcom,battery-charger" },
+	{
+		.compatible = "qcom,battery-charger",
+		.data = &battery_chg_match_data_default,
+	},
+	{
+		.compatible = "qcom,waipio-battery-charger",
+		.data = &battery_chg_match_data_waipio,
+	},
 	{},
 };
 
