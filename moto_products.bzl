@@ -4,7 +4,7 @@ load("//build/kernel/kleaf:kernel.bzl", "ddk_headers")
 load(":target_variants.bzl", "la_variants", "targets")
 
 # The Motorola product is selected with
-#   --//vendor/motorola/sm8450-kernel:mmi_product=<product>
+#   --//vendor/motorola/sm6475:mmi_product=<product>
 # instead of a generated moto_product.bzl. A build setting can't be read while
 # macros run, so everything product specific has to go through select().
 #
@@ -137,5 +137,5 @@ def moto_product_dict(msm_target, default, by_product):
     for product, value in by_product.items():
         if product not in products:
             fail("{}: product {} has no moto-{}-{}.config".format(msm_target, product, msm_target, product))
-        ret["//vendor/motorola/sm8450-kernel:mmi_product_{}".format(product)] = value
+        ret["//vendor/motorola/sm6475:mmi_product_{}".format(product)] = value
     return ret

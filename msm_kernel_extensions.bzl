@@ -1,5 +1,5 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
-load("//vendor/qcom/kernel/arch/arm64/boot/dts/vendor:qcom/platform_map.bzl", _get_dtb_list = "get_dtb_list", _get_dtb_products = "get_dtb_products", _get_dtbo_list = "get_dtbo_list")
+load("//vendor/motorola/sm6475/arch/arm64/boot/dts/vendor:qcom/platform_map.bzl", _get_dtb_list = "get_dtb_list", _get_dtb_products = "get_dtb_products", _get_dtbo_list = "get_dtbo_list")
 load(":moto_products.bzl", "define_moto_kernel_internal_headers", "define_moto_product_flag")
 
 def define_top_level_rules():
@@ -38,7 +38,7 @@ def get_dtb_products(target):
     return _get_dtb_products(target)
 
 def get_dtstree(target):
-    return "//vendor/qcom/kernel/arch/arm64/boot/dts/vendor:msm_dt"
+    return "//vendor/motorola/sm6475/arch/arm64/boot/dts/vendor:msm_dt"
 
 def get_vendor_ramdisk_binaries(target, flavor = None):
     return None
